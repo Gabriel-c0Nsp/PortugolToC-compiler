@@ -1,0 +1,4 @@
+#!/bin/sh
+
+clear
+time python ~/repos/PortugolToC-compiler/compilador/main.py
