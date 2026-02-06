@@ -80,7 +80,7 @@ class Lexer:
             parts.append(f"(?P<{tok_type}>{pattern})")
         self._master_pat = re.compile("|".join(parts))
 
-    def tokenizer(self, codigo: str) -> list[Token]:
+    def tokenizar(self, codigo: str) -> list[Token]:
         tokens: list[Token] = []
         linha = 1
         coluna = 1
