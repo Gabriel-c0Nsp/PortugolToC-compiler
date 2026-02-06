@@ -1,9 +1,11 @@
 from dataclasses import dataclass
 
+
 @dataclass
 class Posicao:
     linha: int
     coluna: int
+
 
 class ErroCompilador(Exception):
     def __init__(self, mensagem: str, pos: Posicao | None = None):
@@ -17,4 +19,8 @@ class ErroCompilador(Exception):
 
 
 class ErroLexico(ErroCompilador):
+    pass
+
+
+class ErroSintatico(ErroCompilador):
     pass
