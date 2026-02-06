@@ -16,6 +16,11 @@ from .ast_nodes import (
     StrLit,
     VarRef,
     BinOp,
+    Call,
+    Return,
+    CallStmt,
+    ProcDecl,
+    FuncDecl,
 )
 
 
@@ -43,6 +48,9 @@ class Parser:
 
         return token
 
+    def peek(self, k: int = 1) -> Token:
+        return self.tokens[self.pos + k]
+
     def parse(self) -> Program:
         comandos = []
 
@@ -67,13 +75,28 @@ class Parser:
         if token.tipo == "KW_ENQUANTO":
             return self.enquanto_stmt()
 
-        if token.tipo == "IDENT":
-            return self.atribuicao()
+        if token.tipo == "KW_PROCEDIMENTO":
+            return self.proc_decl()
 
-        raise ErroSintatico(
-            f"Comando inválido começando em {token.tipo} ({token.lexema})",
-            Posicao(token.linha, token.coluna),
-        )
+        if token.tipo == "KW_FUNCAO":
+            return self.func_decl()
+
+        if token.tipo == "KW_RETORNE":
+            return self.return_stmt()
+
+        if token.tipo == "IDENT":
+            # lookahead 1: se próximo é ASSIGN => atribuicao
+            if self.peek().tipo == "ASSIGN":
+                return self.atribuicao()
+            # se próximo é LPAREN => chamada como comando
+            if self.peek().tipo == "LPAREN":
+                call = self._call_from_ident()
+                self.eat("SEMI")
+                return CallStmt(call)
+            raise ErroSintatico(
+                f"Após identificador '{token.lexema}', esperado '=' ou '('",
+                Posicao(token.linha, token.coluna),
+            )
 
     def declaracao(self) -> VarDecl:
         if self.match("KW_INTEIRO"):
@@ -124,6 +147,74 @@ class Parser:
             node = BinOp(op, node, right)
 
         return node
+
+    def _call_from_ident(self) -> Call:
+        nome = self.eat("IDENT").lexema
+        self.eat("LPAREN")
+        args = []
+        if not self.match("RPAREN"):
+            args.append(self.expr())
+            while self.match("COMMA"):
+                self.eat("COMMA")
+                args.append(self.expr())
+        self.eat("RPAREN")
+        return Call(nome, args)
+
+    def _param_list(self) -> list[str]:
+        params = []
+        if self.match("IDENT"):
+            params.append(self.eat("IDENT").lexema)
+            while self.match("COMMA"):
+                self.eat("COMMA")
+                params.append(self.eat("IDENT").lexema)
+        return params
+
+    def proc_decl(self) -> ProcDecl:
+        self.eat("KW_PROCEDIMENTO")
+        nome = self.eat("IDENT").lexema
+        self.eat("LPAREN")
+        params = self._param_list()
+        self.eat("RPAREN")
+        self.eat("KW_INICIO")
+
+        body = self.bloco_ate({"KW_FIM"})
+        self.eat("KW_FIM")
+
+        return ProcDecl(nome, params, body)
+
+    def func_decl(self) -> FuncDecl:
+        self.eat("KW_FUNCAO")
+        nome = self.eat("IDENT").lexema
+        self.eat("LPAREN")
+        params = self._param_list()
+        self.eat("RPAREN")
+        self.eat("KW_INICIO")
+
+        body = []
+        ret = None
+        while not self.match("KW_FIM"):
+            if self.match("KW_RETORNE"):
+                ret = self.return_stmt()
+                body.append(ret)
+            else:
+                body.append(self.comando())
+
+        self.eat("KW_FIM")
+
+        if ret is None:
+            tok = self.current()
+            raise ErroSintatico(
+                f"Função '{nome}' sem 'retorne'.",
+                Posicao(tok.linha, tok.coluna),
+            )
+
+        return FuncDecl(nome, params, body, ret)
+
+    def return_stmt(self) -> Return:
+        tok = self.eat("KW_RETORNE")
+        expr = self.expr()
+        self.eat("SEMI")
+        return Return(expr)
 
     def condicao(self) -> Expr:
         left = self.expr()
@@ -230,8 +321,18 @@ class Parser:
             return StrLit(token.lexema[1:-1])
 
         if token.tipo == "IDENT":
-            self.eat("IDENT")
-            return VarRef(token.lexema)
+            nome = self.eat("IDENT").lexema
+            if self.match("LPAREN"):
+                self.eat("LPAREN")
+                args = []
+                if not self.match("RPAREN"):
+                    args.append(self.expr())
+                    while self.match("COMMA"):
+                        self.eat("COMMA")
+                        args.append(self.expr())
+                self.eat("RPAREN")
+                return Call(nome, args)
+            return VarRef(nome)
 
         if token.tipo == "LPAREN":
             self.eat("LPAREN")

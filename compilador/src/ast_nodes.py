@@ -45,6 +45,12 @@ class Compare(Expr):
 
 
 @dataclass(frozen=True)
+class Call(Expr):
+    nome: str
+    args: list[Expr]
+
+
+@dataclass(frozen=True)
 class Stmt:
     pass
 
@@ -66,6 +72,31 @@ class While(Stmt):
 class VarDecl(Stmt):
     tipo: TipoPortugol
     nome: str
+
+
+@dataclass(frozen=True)
+class Return(Stmt):
+    expr: Expr
+
+
+@dataclass(frozen=True)
+class ProcDecl(Stmt):
+    nome: str
+    params: list[str]
+    body: list[Stmt]
+
+
+@dataclass(frozen=True)
+class FuncDecl(Stmt):
+    nome: str
+    params: list[str]
+    body: list[Stmt]
+    ret: Return
+
+
+@dataclass(frozen=True)
+class CallStmt(Stmt):
+    call: Call
 
 
 @dataclass(frozen=True)
