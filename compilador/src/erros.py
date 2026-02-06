@@ -24,3 +24,7 @@ class ErroLexico(ErroCompilador):
 
 class ErroSintatico(ErroCompilador):
     pass
+
+
+class ErroSemantico(ErroCompilador):
+    pass
