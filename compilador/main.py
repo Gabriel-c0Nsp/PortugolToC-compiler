@@ -7,7 +7,7 @@ from src.gerador_c import GeradorC
 from src.erros import ErroCompilador
 
 codigo = """
-funcao soma(a, b)
+funcao soma(inteiro a, inteiro b)
 inicio
   retorne a + b;
 fim

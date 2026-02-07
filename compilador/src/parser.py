@@ -21,6 +21,7 @@ from .ast_nodes import (
     CallStmt,
     ProcDecl,
     FuncDecl,
+    Param,
 )
 
 
@@ -160,13 +161,31 @@ class Parser:
         self.eat("RPAREN")
         return Call(nome, args)
 
-    def _param_list(self) -> list[str]:
+    def _param(self) -> tuple[str, str]:
+        if self.match("KW_INTEIRO"):
+            self.eat("KW_INTEIRO")
+            tipo = "inteiro"
+        elif self.match("KW_REAL"):
+            self.eat("KW_REAL")
+            tipo = "real"
+        elif self.match("KW_CADEIA"):
+            self.eat("KW_CADEIA")
+            tipo = "cadeia"
+        else:
+            tipo = "inteiro"  # default
+
+        nome = self.eat("IDENT").lexema
+        return (tipo, nome)
+
+    def _param_list(self) -> list:
         params = []
-        if self.match("IDENT"):
-            params.append(self.eat("IDENT").lexema)
+        if not self.match("RPAREN"):
+            tipo, nome = self._param()
+            params.append(Param(tipo, nome))
             while self.match("COMMA"):
                 self.eat("COMMA")
-                params.append(self.eat("IDENT").lexema)
+                tipo, nome = self._param()
+                params.append(Param(tipo, nome))
         return params
 
     def proc_decl(self) -> ProcDecl:

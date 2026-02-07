@@ -78,18 +78,22 @@ class VarDecl(Stmt):
 class Return(Stmt):
     expr: Expr
 
+@dataclass(frozen=True)
+class Param:
+    tipo: str
+    nome: str
 
 @dataclass(frozen=True)
 class ProcDecl(Stmt):
     nome: str
-    params: list[str]
+    params: list[Param]
     body: list[Stmt]
 
 
 @dataclass(frozen=True)
 class FuncDecl(Stmt):
     nome: str
-    params: list[str]
+    params: list[Param]
     body: list[Stmt]
     ret: Return
 
