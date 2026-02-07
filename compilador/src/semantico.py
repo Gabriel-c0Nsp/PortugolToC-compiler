@@ -46,7 +46,12 @@ class AnalisadorSemantico:
                 self._registrar_func_stub(stmt)
 
         for stmt in program.comandos:
-            self._stmt(stmt)
+            if isinstance(stmt, (ProcDecl, FuncDecl)):
+                self._stmt(stmt)
+
+        for stmt in program.comandos:
+            if not isinstance(stmt, (ProcDecl, FuncDecl)):
+                self._stmt(stmt)
 
     def _registrar_proc(self, stmt: ProcDecl) -> None:
         tipos = [p.tipo for p in stmt.params]
@@ -157,42 +162,71 @@ class AnalisadorSemantico:
         self.tabela.pop()
 
     def _func_decl(self, stmt: FuncDecl) -> None:
+        # novo escopo para parâmetros e variáveis locais da função
         self.tabela.push()
         for p in stmt.params:
             self.tabela.declarar_var(p.nome, p.tipo)
 
         old = self._ctx_func_retorno
-        self._ctx_func_retorno = "unknown"  # vamos inferir
+        self._ctx_func_retorno = "func"  # estamos dentro de uma função
 
         retorno_inferido: str | None = None
+
         for s in stmt.body:
             self._stmt(s)
+
             if isinstance(s, Return):
-                retorno_inferido = self.tipos_expr.get(id(s.expr))
+                t = self.tipos_expr.get(id(s.expr))
+                if t is None:
+                    raise ErroSemantico("Tipo do retorno não inferido (erro interno).")
+
+                if retorno_inferido is None:
+                    retorno_inferido = t
+                else:
+                    # Promoção: inteiro + real => real
+                    if retorno_inferido == t:
+                        pass
+                    elif (retorno_inferido, t) in {
+                        ("inteiro", "real"),
+                        ("real", "inteiro"),
+                    }:
+                        retorno_inferido = "real"
+                    else:
+                        raise ErroSemantico(
+                            f"Retornos inconsistentes na função '{stmt.nome}': {retorno_inferido} vs {t}."
+                        )
 
         if retorno_inferido is None:
             raise ErroSemantico(f"Função '{stmt.nome}' sem 'retorne'.")
 
-        # grava retorno na tabela (atualiza símbolo global)
+        # atualiza símbolo global da função com o tipo de retorno inferido
         sym = self.tabela.buscar(stmt.nome)
-        if isinstance(sym, SimboloRotina) and sym.kind == "func":
-            # re-declarar como nova entrada (imutável)
-            self.tabela._scopes[0][stmt.nome] = SimboloRotina(
-                kind="func", nome=stmt.nome, params=sym.params, retorno=retorno_inferido
+        if not isinstance(sym, SimboloRotina) or sym.kind != "func":
+            raise ErroSemantico(
+                f"Erro interno: símbolo da função '{stmt.nome}' não encontrado."
             )
+
+        self.tabela._scopes[0][stmt.nome] = SimboloRotina(
+            kind="func",
+            nome=stmt.nome,
+            params=sym.params,
+            retorno=retorno_inferido,
+        )
 
         self._ctx_func_retorno = old
         self.tabela.pop()
 
     def _call_stmt(self, stmt: CallStmt) -> None:
-        self._expr(stmt.call)
+        sym = self.tabela.buscar(stmt.call.nome)
+        if not isinstance(sym, SimboloRotina):
+            raise ErroSemantico(f"Rotina '{stmt.call.nome}' não declarada.")
+
+        self._checar_args(stmt.call, sym)
 
     def _return(self, stmt: Return) -> None:
-        if self._ctx_func_retorno is None:
+        if self._ctx_func_retorno != "func":
             raise ErroSemantico("'retorne' só é permitido dentro de função.")
-        # inferir tipo do retorno
-        t = self._expr(stmt.expr)
-        self._ctx_func_retorno = t
+        self._expr(stmt.expr)
 
     # Expressions
     def _expr(self, expr: Expr) -> str:
@@ -226,30 +260,38 @@ class AnalisadorSemantico:
 
         raise ErroSemantico(f"Expr não suportada: {type(expr).__name__}")
 
-    def _call_expr(self, call: Call) -> str:
-        sym = self.tabela.buscar(call.nome)
-        if not isinstance(sym, SimboloRotina):
-            raise ErroSemantico(f"Rotina '{call.nome}' não declarada.")
-
+    def _checar_args(self, call: Call, sym: SimboloRotina) -> None:
         if len(call.args) != len(sym.params):
             raise ErroSemantico(
                 f"Chamada de '{call.nome}' com {len(call.args)} args; esperado {len(sym.params)}."
             )
 
-        for i, (arg, tipo_param) in enumerate(zip(call.args, sym.params), start=1):
-            tipo_arg = self._expr(arg)
+        for i, (arg_expr, tipo_param) in enumerate(zip(call.args, sym.params), start=1):
+            tipo_arg = self._expr(arg_expr)
             if not self._atribuicao_compativel(tipo_param, tipo_arg):
                 raise ErroSemantico(
                     f"Arg {i} de '{call.nome}' incompatível: esperado {tipo_param}, veio {tipo_arg}."
                 )
 
+    def _call_expr(self, call: Call) -> str:
+        sym = self.tabela.buscar(call.nome)
+        if not isinstance(sym, SimboloRotina):
+            raise ErroSemantico(f"Rotina '{call.nome}' não declarada.")
+
+        self._checar_args(call, sym)
+
+        # procedimento
         if sym.kind == "proc":
-            return self._set_tipo(
-                call, "inteiro" # valor dummy
+            raise ErroSemantico(
+                f"Procedimento '{call.nome}' não pode ser usado como expressão."
             )
-        # func
+
+        # função
         if sym.retorno is None:
-            return self._set_tipo(call, "inteiro")
+            raise ErroSemantico(
+                f"Tipo de retorno da função '{call.nome}' ainda não definido."
+            )
+
         return self._set_tipo(call, sym.retorno)
 
     def _set_tipo(self, node: object, tipo: str) -> str:
