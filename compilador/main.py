@@ -7,13 +7,13 @@ from src.gerador_c import GeradorC
 from src.erros import ErroCompilador
 
 codigo = """
-funcao soma(inteiro a, inteiro b)
-inicio
-  retorne a + b;
-fim
-
 inteiro x;
-x = soma(2, 3);
+x = 0;
+
+enquanto (x < 5) faca
+  x = x + 1;
+fimenquanto
+
 escreva(x);
 """
 
