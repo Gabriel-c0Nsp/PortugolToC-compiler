@@ -30,3 +30,10 @@ Dentro da raiz do projeto, basta executar:
 ```bash
 python ./compilador/main.py
 ```
+
+## Usando Google Colab
+Utilizando a ferramenta `Google Colab` no seu navegador, você deverá importar o projeto através do arquivo zipado que se encontra na raiz do repositório, chamado `compilador.zip`.
+
+Essa ação deve ocorrer no momento em que executar a célula de setup do projeto, ou utilizando a funcionalidade `Run all` do Colab. Um prompt será exibido solicitando que o usuário entre com o arquivo compilador.zip, já mencionado acima.
+
+Vale ressaltar que a versão implementada através do Google Colab é a versão final referente ao curso de `Teoria da Computação e Compiladores`, e não deve ser atualizada após a data de envio do projeto. A versão CLI do projeto conta com mais funcionalidades e flexibilidade de execução, podendo ainda receber atualizações.
