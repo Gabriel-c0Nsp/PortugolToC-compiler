@@ -1,0 +1,34 @@
+#!/bin/sh
+
+red='\e[0;31m'
+green='\e[0;32m'
+yellow='\e[0;33m'
+blue='\e[0;34m'
+reset='\e[0m'
+
+VERSION="1.0"
+SCRIPT_NAME=$(basename "$0")
+
+# flags
+case "$1" in
+  -h | --help)
+    echo -e "
+    Mini-transpilador em Python que traduz um subconjunto de Portugol para C,
+    cobrindo estruturas e tipos básicos, com suporte a inteiro, real, cadeia,
+    se/senao, enquanto, escreva, procedimentos e funções.
+
+    O projeto também pode ser executado no Google Colab.
+
+    Uso: $SCRIPT_NAME [ <nome-de-arquivo> | -h | -v ]
+
+    Para mais informações: ${blue}https://github.com/Gabriel-c0Nsp/PortugolToC-compiler${reset}"
+    exit 0
+  ;;
+  -v | --version)
+    echo "v$VERSION"
+    exit 0
+  ;;
+esac
+
+clear
+time python ~/repos/PortugolToC-compiler/compilador/main.py $1

@@ -10,9 +10,14 @@ from src.erros import ErroCompilador
 if len(sys.argv) > 1:
     caminho = sys.argv[1]
 
-    with open(caminho, "r", encoding="utf-8") as f:
-        codigo = f.read()
-else: 
+    try:
+        with open(caminho, "r", encoding="utf-8") as f:
+            codigo = f.read()
+    except FileNotFoundError:
+        print(f'Arquivo "{caminho}" não encontrado.\n')
+        print('Tente "./ptc -h" para mais informações de uso.')
+        sys.exit(1)
+else:
     codigo = """
     inteiro x;
     x = 0;
