@@ -31,4 +31,4 @@ case "$1" in
 esac
 
 clear
-time python ~/repos/PortugolToC-compiler/compilador/main.py $1
+time python ./compilador/main.py $1
