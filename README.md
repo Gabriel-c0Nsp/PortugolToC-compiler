@@ -1,5 +1,9 @@
 # PortugolToC-compiler
-Projeto final da cadeira de Teoria da Computação e Computadores.
+Projeto final da cadeira de `Teoria da Computação e Computadores`.
+
+Mini-transpilador em Python que traduz um subconjunto de Portugol para C,
+cobrindo estruturas e tipos básicos, com suporte a inteiro, real, cadeia,
+se/senao, enquanto, escreva, procedimentos e funções.
 
 O projeto teve como objetivos principais:
 - Implementar um `analisador léxico` usando expressões regulares.
@@ -17,12 +21,12 @@ cd PortugolToC-compiler
 
 Dê permissão para o script de execução
 ```bash
-chmod +x run
+chmod +x ptc
 ```
 
 Agora basta executar o script `run`
 ```bash
-./run
+./ptc
 ```
 
 ## Para executar manualmente (Windows)
