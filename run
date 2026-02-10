@@ -1,4 +1,4 @@
 #!/bin/sh
 
 clear
-time python ~/repos/PortugolToC-compiler/compilador/main.py
+time python ~/repos/PortugolToC-compiler/compilador/main.py $1

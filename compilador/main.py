@@ -1,3 +1,4 @@
+import sys
 from pprint import pprint
 
 from src.lexer import Lexer
@@ -6,16 +7,23 @@ from src.semantico import AnalisadorSemantico
 from src.gerador_c import GeradorC
 from src.erros import ErroCompilador
 
-codigo = """
-inteiro x;
-x = 0;
+if len(sys.argv) > 1:
+    caminho = sys.argv[1]
 
-enquanto (x < 5) faca
-  x = x + 1;
-fimenquanto
+    with open(caminho, "r", encoding="utf-8") as f:
+        codigo = f.read()
+else: 
+    codigo = """
+    inteiro x;
+    x = 0;
 
-escreva(x);
-"""
+    enquanto (x < 5) faca
+      x = x + 1;
+    fimenquanto
+
+    escreva(x);
+    """
+
 
 print("\npara o código:\n")
 print("=============================")
